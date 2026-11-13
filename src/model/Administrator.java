@@ -1,5 +1,7 @@
 package model;
 
+import java.time.LocalDateTime;
+
 // the one fixed admin account
 public class Administrator extends User {
 
@@ -33,5 +35,14 @@ public class Administrator extends User {
     // rejecting only changes the status
     public void reject(AccessRequest request) {
         request.reject();
+    }
+
+    // extra minutes for a student, returns the record so it can be saved
+    public TimeGrant grantTime(Student student, int minutes, String reason, LocalDateTime now) {
+        if (reason == null || reason.trim().isEmpty()) {
+            throw new IllegalArgumentException("A reason is required.");
+        }
+        student.getAllowance().grant(minutes);
+        return new TimeGrant(student.getUniversityId(), minutes, reason.trim(), getUsername(), now);
     }
 }
