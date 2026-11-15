@@ -1,11 +1,10 @@
 package model;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 // everything the app keeps in memory. DataStore saves/loads it,
-// AccountService and the Scheduler work on it
+// AccountService and the Scheduler work on it. the time is kept in SimulationClock
 public class AppData {
 
     private HashMap<String, Student> students = new HashMap<>(); // key = university id
@@ -13,8 +12,6 @@ public class AppData {
     private ArrayList<Job> jobs = new ArrayList<>();
     private ArrayList<TimeGrant> grants = new ArrayList<>();
     private GPU[] gpus = new GPU[4];
-    private LocalDateTime clockStart; // when the admin set the clock (for utilization)
-    private LocalDateTime clockNow;   // current simulated time, null = not set yet
 
     public AppData() {
         for (int i = 0; i < gpus.length; i++) {
@@ -40,23 +37,6 @@ public class AppData {
 
     public GPU[] getGpus() {
         return gpus;
-    }
-
-    public LocalDateTime getClockStart() {
-        return clockStart;
-    }
-
-    public LocalDateTime getClockNow() {
-        return clockNow;
-    }
-
-    public void setClock(LocalDateTime start, LocalDateTime now) {
-        this.clockStart = start;
-        this.clockNow = now;
-    }
-
-    public boolean isClockSet() {
-        return clockNow != null;
     }
 
     // next job id: J101, J102, ...
