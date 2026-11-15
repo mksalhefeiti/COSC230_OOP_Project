@@ -1,4 +1,5 @@
 package logic;
+import java.time.LocalDateTime;
 
 public class SimulationClock {
 private int year, month, day, hour, minute;
@@ -38,6 +39,13 @@ public int getHour() {
 public int getMinute() {
 	return minute;
 }
+
+public  LocalDateTime getNow() {
+	//must check that clock is set before using LocalDateTime.of
+			if (!this.isSet()) return null;
+			
+			return LocalDateTime.of(year, month, day, hour, minute);
+		}
 
 public boolean setStart(int year, int month, int day, int hour, int minute) {
 	if(this.isSet()) {
