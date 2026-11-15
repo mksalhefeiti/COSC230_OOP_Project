@@ -59,44 +59,82 @@ public class DataStore {
     }
 
     // fills the given clock and returns everything else
-    public AppData load(SimulationClock clock) throws IOException {
+    // a broken line stops loading with a DataFileException (file + line) instead of crashing
+    public AppData load(SimulationClock clock) throws DataFileException {
         AppData data = new AppData();
-        for (String line : readFile("clock.csv")) {
-            String[] v = Storable.split(line, 6);
-            clock.restore(Integer.parseInt(v[0]), Integer.parseInt(v[1]), Integer.parseInt(v[2]),
-                    Integer.parseInt(v[3]), Integer.parseInt(v[4]), Integer.parseInt(v[5]));
-        }
-        for (String line : readFile("students.csv")) {
-            Student student = Student.fromLine(line);
-            data.getStudents().put(student.getUniversityId(), student);
-        }
-        for (String line : readFile("requests.csv")) {
-            data.getRequests().add(AccessRequest.fromLine(line));
-        }
-        for (String line : readFile("grants.csv")) {
-            data.getGrants().add(TimeGrant.fromLine(line));
-        }
-        for (String line : readFile("jobs.csv")) {
-            Job job = Job.fromLine(line);
-            data.getJobs().add(job);
-            if (job.getStatus() == JobStatus.RUNNING) {
-                data.getGpus()[job.getAssignedGpuId() - 1].assign(job); // back on its gpu
+        String fileName = "";
+        int lineNumber = 0;
+        try {
+            fileName = "clock.csv";
+            lineNumber = 0;
+            for (String line : readFile(fileName)) {
+                lineNumber++;
+                if (!line.trim().isEmpty()) {
+                    String[] v = Storable.split(line, 6);
+                    boolean ok = clock.restore(Integer.parseInt(v[0]), Integer.parseInt(v[1]),
+                            Integer.parseInt(v[2]), Integer.parseInt(v[3]),
+                            Integer.parseInt(v[4]), Integer.parseInt(v[5]));
+                    if (!ok) {
+                        throw new IllegalArgumentException("not a valid date/time");
+                    }
+                }
             }
+
+            fileName = "students.csv";
+            lineNumber = 0;
+            for (String line : readFile(fileName)) {
+                lineNumber++;
+                if (!line.trim().isEmpty()) {
+                    Student student = Student.fromLine(line);
+                    data.getStudents().put(student.getUniversityId(), student);
+                }
+            }
+
+            fileName = "requests.csv";
+            lineNumber = 0;
+            for (String line : readFile(fileName)) {
+                lineNumber++;
+                if (!line.trim().isEmpty()) {
+                    data.getRequests().add(AccessRequest.fromLine(line));
+                }
+            }
+
+            fileName = "grants.csv";
+            lineNumber = 0;
+            for (String line : readFile(fileName)) {
+                lineNumber++;
+                if (!line.trim().isEmpty()) {
+                    data.getGrants().add(TimeGrant.fromLine(line));
+                }
+            }
+
+            fileName = "jobs.csv";
+            lineNumber = 0;
+            for (String line : readFile(fileName)) {
+                lineNumber++;
+                if (!line.trim().isEmpty()) {
+                    Job job = Job.fromLine(line);
+                    if (!data.getStudents().containsKey(job.getStudentId())) {
+                        throw new IllegalArgumentException("unknown student " + job.getStudentId());
+                    }
+                    data.getJobs().add(job);
+                    if (job.getStatus() == JobStatus.RUNNING) {
+                        data.getGpus()[job.getAssignedGpuId() - 1].assign(job); // back on its gpu
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new DataFileException(folder + "/" + fileName, lineNumber, e.getMessage());
         }
         return data;
     }
 
-    // non-empty lines of a file, or none if the file doesn't exist yet
+    // all lines of a file (so line numbers match), or none if it doesn't exist yet
     private List<String> readFile(String fileName) throws IOException {
         Path path = Paths.get(folder, fileName);
-        ArrayList<String> lines = new ArrayList<>();
-        if (Files.exists(path)) {
-            for (String line : Files.readAllLines(path)) {
-                if (!line.trim().isEmpty()) {
-                    lines.add(line);
-                }
-            }
+        if (!Files.exists(path)) {
+            return new ArrayList<>();
         }
-        return lines;
+        return Files.readAllLines(path);
     }
 }
